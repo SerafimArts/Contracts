@@ -1,0 +1,48 @@
+{
+    "name": "serafim/dbc",
+    "type": "library",
+    "description": "Design by Contract framework for PHP",
+    "license": "MIT",
+    "require": {
+        "php": ">=7.1.3",
+        "symfony/polyfill-php80": "^1.20",
+        "nikic/php-parser": "^4.10"
+    },
+    "require-dev": {
+        "vimeo/psalm": "^4.1",
+        "beberlei/assert": "^3.3",
+        "symfony/var-dumper": "^5.1",
+        "doctrine/annotations": "^1.11",
+        "roave/security-advisories": "dev-master@dev"
+    },
+    "autoload": {
+        "files": [
+            "src/bootstrap.php"
+        ],
+        "psr-4": {
+            "Serafim\\Contracts\\": "src"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Serafim\\Contracts\\Demo\\": "demo"
+        }
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-master": "1.0.x-dev"
+        },
+        "contracts": [
+            "Serafim\\Contracts\\Demo\\"
+        ]
+    },
+    "suggest": {
+        "doctrine/annotations": "^1.10 PHP 7.4 annotations support",
+        "beberlei/assert": "^3.0 Thin assertion library for input validation in business models"
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
