@@ -11,19 +11,28 @@ declare(strict_types=1);
 
 namespace Serafim\Contracts\Exception;
 
-use JetBrains\PhpStorm\Pure;
-
 /**
  * An error in contract annotation usage.
  *
  * @psalm-consistent-constructor
  */
-class SpecificationException extends \InvalidArgumentException implements ContractsExceptionInterface
+class SpecificationException extends \InvalidArgumentException implements
+    AssertionDefinitionExceptionInterface
 {
     /**
      * @var non-empty-string
      */
     private const ERROR_INCOMPATIBLE_TYPE = '%s MUST contain PHP code string';
+
+    /**
+     * @param string $message
+     * @param int $code
+     * @param \Throwable|null $previous
+     */
+    final public function __construct(string $message = '', int $code = 0, \Throwable $previous = null)
+    {
+        parent::__construct($message, $code, $previous);
+    }
 
     /**
      * @psalm-taint-sink file $file
@@ -34,6 +43,7 @@ class SpecificationException extends \InvalidArgumentException implements Contra
      */
     public static function create(string $message, string $file, int $line): static
     {
+        /** @psalm-suppress RedundantCondition */
         assert($line > 0, new \InvalidArgumentException('Line must be greater than 0'));
 
         $instance = new static($message);
@@ -44,12 +54,13 @@ class SpecificationException extends \InvalidArgumentException implements Contra
     }
 
     /**
-     * @param string $type
-     * @param string $file
-     * @param int $line
+     * @psalm-taint-sink file $file
+     * @param non-empty-string $type
+     * @param non-empty-string $file
+     * @param positive-int $line
      * @return static
      */
-    public static function badType(string $type, string $file, int $line): self
+    public static function badType(string $type, string $file, int $line): static
     {
         $message = \sprintf(self::ERROR_INCOMPATIBLE_TYPE, $type);
 

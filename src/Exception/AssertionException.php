@@ -11,36 +11,31 @@ declare(strict_types=1);
 
 namespace Serafim\Contracts\Exception;
 
-use JetBrains\PhpStorm\Language;
-use Serafim\Contracts\Runtime\Exception;
-
 /**
  * Base class for contract assertion errors. You should generally not catch this.
  *
  * @psalm-consistent-constructor
  */
-class AssertionException extends \AssertionError implements ContractsExceptionInterface
+class AssertionException extends \AssertionError implements
+    AssertionViolationExceptionInterface
 {
     /**
-     * @psalm-taint-sink eval $expression
      * @psalm-taint-sink file $file
-     *
-     * @param bool $result
-     * @param non-empty-string $expression
-     * @param non-empty-string $file
-     * @param positive-int $line
-     * @return void
-     * @throws \ReflectionException
-     * @throws \Throwable
+     * @param non-empty-string $message
+     * @param non-empty-string|null $file
+     * @param positive-int|null $line
      */
-    public static function throwIf(bool $result, #[Language('PHP')] string $expression, string $file, int $line): void
+    final public function __construct(string $message, string $file = null, int $line = null)
     {
-        if ($result === false) {
-            $instance = new static($expression);
-            $instance->file = $file;
-            $instance->line = $line;
+        $segments = \explode('\\', static::class);
 
-            throw Exception::withLocation($instance, $file, $line);
+        parent::__construct(\vsprintf('%s assertion (%s) failed', [
+            \substr(\end($segments), 0, -9),
+            $message,
+        ]));
+
+        if ($file !== null && $line !== null) {
+            [$this->file, $this->line] = [$file, $line];
         }
     }
 }
