@@ -39,6 +39,11 @@ final class Processor implements ProcessorInterface
     private readonly Compiler $compiler;
 
     /**
+     * @var bool
+     */
+    private bool $enabled = false;
+
+    /**
      * @psalm-taint-sink file $storage
      * @param LoaderInterface $loader
      * @param non-empty-string|null $storage
@@ -78,7 +83,8 @@ final class Processor implements ProcessorInterface
      */
     public function enable(): void
     {
-        \spl_autoload_register($this->loadClass(...), true, true);
+        $this->enabled = true;
+        \spl_autoload_register([$this, 'loadClass'], true, true);
     }
 
     /**
@@ -86,7 +92,8 @@ final class Processor implements ProcessorInterface
      */
     public function disable(): void
     {
-        \spl_autoload_unregister($this->loadClass(...));
+        $this->enabled = false;
+        \spl_autoload_unregister([$this, 'loadClass']);
     }
 
     /**
@@ -108,7 +115,7 @@ final class Processor implements ProcessorInterface
      */
     public function loadClass(string $class): bool
     {
-        if (! $this->isAllowed($class)) {
+        if ($this->enabled === false || $this->isAllowed($class) === false) {
             return false;
         }
 

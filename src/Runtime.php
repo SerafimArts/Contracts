@@ -73,19 +73,18 @@ final class Runtime
      * `assert.active` are enabled in `php.ini` configuration file or
      * disable ({@see disable()}) otherwise.
      *
-     * @return bool
+     * @return void
      */
-    public static function auto(): bool
+    public static function auto(): void
     {
-        $result = false;
+        $enabled = false;
+        assert($enabled = true);
 
-        assert(self::enable() || $result = true);
-
-        if ($result === false) {
+        if ($enabled) {
+            self::enable();
+        } else {
             self::disable();
         }
-
-        return $result;
     }
 
     /**
@@ -93,18 +92,12 @@ final class Runtime
      *
      * This is the default value for DEBUG environment.
      *
-     * @return bool
+     * @return void
      */
-    public static function enable(): bool
+    public static function enable(): void
     {
-        if (self::$enabled === false) {
-            $interceptor = self::boot();
-            $interceptor->enable();
-
-            return self::$enabled = true;
-        }
-
-        return false;
+        $interceptor = self::boot();
+        $interceptor->enable();
     }
 
     /**
@@ -112,18 +105,12 @@ final class Runtime
      *
      * This is the default value for PRODUCTION environment.
      *
-     * @return bool
+     * @return void
      */
-    public static function disable(): bool
+    public static function disable(): void
     {
-        if (self::$enabled === true) {
-            $interceptor = self::boot();
-            $interceptor->disable();
-
-            return ! (self::$enabled = false);
-        }
-
-        return false;
+        $interceptor = self::boot();
+        $interceptor->disable();
     }
 
     /**
