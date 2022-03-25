@@ -15,12 +15,12 @@ use Serafim\Contracts\Attribute\Ensure;
 use Serafim\Contracts\Attribute\Invariant;
 use Serafim\Contracts\Attribute\Verify;
 
-#[Invariant('$this->balance >= 0')]
 class Account
 {
     /**
      * @var positive-int|0
      */
+    #[Invariant('$this->balance >= 0')]
     protected int $balance = 0;
 
     /**

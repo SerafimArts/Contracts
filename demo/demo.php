@@ -16,6 +16,7 @@ require __DIR__ . '/../vendor/autoload.php';
 
 Runtime::enable();
 Runtime::listen('Serafim\Contracts\Demo');
+Runtime::rebuild(true); // Debug only
 
 $account = new Account();
 $account->withdraw(42);
