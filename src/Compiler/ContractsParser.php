@@ -82,35 +82,45 @@ final class ContractsParser
     private function statements(string $file, Attribute $node, string $attr, string $stmt): iterable
     {
         if (\count($node->args) < 1) {
-            throw SpecificationException::badType($attr, $file, $node->getLine());
+            throw SpecificationException::invalidExpressionType($attr, $file, $node->getLine());
         }
 
-        yield $this->extractContractExpression($file, $node->args[0], $attr, $stmt);
+        yield $this->extractContractExpression($file, $node->args[0], $node->args[1] ?? null, $attr, $stmt);
     }
 
     /**
      * @psalm-taint-sink file $file
      * @param non-empty-string $file
-     * @param Node\Arg $argument
+     * @param Node\Arg $expressionArgument
+     * @param Node\Arg|null $reasonArgument
      * @param class-string $attr
      * @param class-string $stmt
      * @return Statement
      */
-    private function extractContractExpression(string $file, Node\Arg $argument, string $attr, string $stmt): Statement
-    {
-        $value = $argument->value;
-
-        if (!$value instanceof Node\Scalar\String_) {
-            throw SpecificationException::badType($attr, $file, $value->getStartLine());
+    private function extractContractExpression(
+        string $file,
+        Node\Arg $expressionArgument,
+        ?Node\Arg $reasonArgument,
+        string $attr,
+        string $stmt
+    ): Statement {
+        $exprValue = $expressionArgument->value;
+        if (!$exprValue instanceof Node\Scalar\String_) {
+            throw SpecificationException::invalidExpressionType($attr, $file, $exprValue->getStartLine());
         }
 
-        $expression = $this->parse($file, $value->value, $attr, $argument);
+        $reasonValue = $reasonArgument?->value;
+        if ($reasonValue !== null && !$reasonValue instanceof Node\Scalar\String_) {
+            throw SpecificationException::invalidReasonType($attr, $file, $exprValue->getStartLine());
+        }
+
+        $expression = $this->parse($file, $exprValue->value, $attr, $expressionArgument);
 
         $traverser = new NodeTraverser();
-        $traverser->addVisitor(new ConstReplaceVisitor($file, $value->getStartLine()));
+        $traverser->addVisitor(new ConstReplaceVisitor($file, $exprValue->getStartLine()));
         $traverser->traverse([$expression]);
 
-        return new $stmt($expression, $value->value, $file, $argument->getLine());
+        return new $stmt($expression, $exprValue->value, $reasonValue?->value, $file, $expressionArgument->getLine());
     }
 
     /**

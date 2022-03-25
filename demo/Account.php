@@ -20,7 +20,7 @@ class Account
     /**
      * @var positive-int|0
      */
-    #[Invariant('$this->balance >= 0')]
+    #[Invariant('$this->balance >= 0', 'Balance can not be less than 0')]
     protected int $balance = 0;
 
     /**

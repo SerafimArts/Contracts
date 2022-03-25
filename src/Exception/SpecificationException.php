@@ -22,7 +22,12 @@ class SpecificationException extends \InvalidArgumentException implements
     /**
      * @var non-empty-string
      */
-    private const ERROR_INCOMPATIBLE_TYPE = '%s MUST contain PHP code string';
+    private const ERROR_EXPRESSION_TYPE = 'Argument #1 of %s MUST contain PHP code string';
+
+    /**
+     * @var non-empty-string
+     */
+    private const ERROR_REASON_TYPE = 'Argument #2 of %s MUST contain reason phrase string';
 
     /**
      * @param string $message
@@ -60,9 +65,23 @@ class SpecificationException extends \InvalidArgumentException implements
      * @param positive-int $line
      * @return static
      */
-    public static function badType(string $type, string $file, int $line): static
+    public static function invalidExpressionType(string $type, string $file, int $line): static
     {
-        $message = \sprintf(self::ERROR_INCOMPATIBLE_TYPE, $type);
+        $message = \sprintf(self::ERROR_EXPRESSION_TYPE, $type);
+
+        return self::create($message, $file, $line);
+    }
+
+    /**
+     * @psalm-taint-sink file $file
+     * @param non-empty-string $type
+     * @param non-empty-string $file
+     * @param positive-int $line
+     * @return static
+     */
+    public static function invalidReasonType(string $type, string $file, int $line): static
+    {
+        $message = \sprintf(self::ERROR_REASON_TYPE, $type);
 
         return self::create($message, $file, $line);
     }

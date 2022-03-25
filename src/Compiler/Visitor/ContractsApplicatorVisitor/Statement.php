@@ -35,12 +35,14 @@ abstract class Statement implements \Stringable
      *
      * @param Expr $ast
      * @param non-empty-string $expression
+     * @param string|null $reason
      * @param non-empty-string $file
      * @param positive-int $line
      */
     public function __construct(
         Expr $ast,
         protected readonly string $expression,
+        protected readonly ?string $reason,
         protected readonly string $file,
         protected readonly int $line
     ) {
@@ -71,7 +73,7 @@ abstract class Statement implements \Stringable
         return new Expression(
             new Expr\Ternary($expr, null, new Expr\Throw_(
                 new Expr\New_($exception, [
-                    new Arg(new String_($this->expression)),
+                    new Arg(new String_($this->reason ?: $this->expression)),
                     new Arg(new String_($this->file)),
                     new Arg(new LNumber($this->line)),
                 ])
