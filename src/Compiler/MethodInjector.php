@@ -11,9 +11,13 @@ declare(strict_types=1);
 
 namespace Serafim\Contracts\Compiler;
 
+use PhpParser\Comment;
 use PhpParser\Node\Expr\Assign;
 use PhpParser\Node\Expr\Clone_;
+use PhpParser\Node\Expr\ConstFetch;
 use PhpParser\Node\Expr\Variable;
+use PhpParser\Node\Name;
+use PhpParser\Node\Stmt;
 use PhpParser\Node\Stmt\ClassMethod;
 use PhpParser\Node\Stmt\Expression;
 use PhpParser\Node\Stmt\Finally_;
@@ -22,11 +26,15 @@ use PhpParser\NodeFinder;
 use PhpParser\NodeTraverser;
 use Serafim\Contracts\Attribute\Ensure;
 use Serafim\Contracts\Attribute\Verify;
-use Serafim\Contracts\Compiler\Statement\EnsureStatement;
-use Serafim\Contracts\Compiler\Statement\InvariantStatement;
-use Serafim\Contracts\Compiler\Statement\VerifyStatement;
+use Serafim\Contracts\Compiler\Visitor\ContractsApplicatorVisitor\EnsureStatement;
+use Serafim\Contracts\Compiler\Visitor\ContractsApplicatorVisitor\InvariantStatement;
+use Serafim\Contracts\Compiler\Visitor\ContractsApplicatorVisitor\VerifyStatement;
 use Serafim\Contracts\Compiler\Visitor\ReturnDecoratorVisitor;
 
+/**
+ * @internal This is an internal library class, please do not use it in your code.
+ * @psalm-internal Serafim\Contracts
+ */
 final class MethodInjector
 {
     /**
@@ -61,13 +69,24 @@ final class MethodInjector
 
         // Has Ensure Statements
         if (\count($postconditions)) {
-            // Add clone expression
-            \array_unshift($preconditions, new Expression(
-                new Assign($old, new Clone_(new Variable('this')))
-            ));
+            $preconditions = [
+                // Add clone expression
+                new Expression(
+                    new Assign($old, new Clone_(new Variable('this'))),
+                    $this->comment('Clone object for future comparison '
+                        . 'with the "$old" variable value')
+                ),
+                // Initialize return variable
+                new Expression(
+                    new Assign($result, new ConstFetch(new Name('null'))),
+                    $this->comment('Initialize the return variable for '
+                        . 'comparison in case of an empty return statement')
+                ),
+                ...$preconditions,
+            ];
 
             // Decorate return
-            $this->wrapReturnStatement($result, $method);
+            $method->stmts = $this->wrapReturnStatement($result, $method->stmts);
         }
 
         foreach ($invariants as $invariant) {
@@ -77,6 +96,17 @@ final class MethodInjector
         $method->stmts = $this->getDecorator($method->stmts, $preconditions, $postconditions);
 
         return $method;
+    }
+
+    /**
+     * @param string $text
+     * @return array{comments: array<Comment>}
+     */
+    private function comment(string $text): array
+    {
+        return ['comments' => [
+            new Comment('/* ' . \str_replace('*/', '*\\/', $text) . ' */')
+        ]];
     }
 
     /**
@@ -117,7 +147,7 @@ final class MethodInjector
      */
     private function generateVariable(string $prefix): Variable
     {
-        return new Variable('__' . $prefix . \hash('xxh64', \random_bytes(32)));
+        return new Variable('__⁠' . $prefix . '⁠' . \hash('xxh32', \random_bytes(32)));
     }
 
     /**
@@ -161,13 +191,15 @@ final class MethodInjector
 
     /**
      * @param Variable $result
-     * @param ClassMethod $method
+     * @param iterable<Stmt> $method
+     * @return iterable<Stmt>
      */
-    private function wrapReturnStatement(Variable $result, ClassMethod $method): void
+    private function wrapReturnStatement(Variable $result, iterable $method): iterable
     {
         $traverser = new NodeTraverser();
         $traverser->addVisitor(new ReturnDecoratorVisitor($result));
-        $traverser->traverse($method->stmts);
+
+        return $traverser->traverse($method);
     }
 
     /**

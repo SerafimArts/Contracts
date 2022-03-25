@@ -20,6 +20,10 @@ use PhpParser\PrettyPrinterAbstract;
 use Serafim\Contracts\Compiler\Visitor\ContractsApplicatorVisitor;
 use Serafim\Contracts\Compiler\Visitor\ExceptionDecoratorVisitor;
 
+/**
+ * @internal This is an internal library class, please do not use it in your code.
+ * @psalm-internal Serafim\Contracts
+ */
 final class Compiler implements CompilerInterface
 {
     /**
@@ -81,7 +85,7 @@ final class Compiler implements CompilerInterface
         $pathname = \realpath($pathname) ?? $pathname;
 
         $traverser = new NodeTraverser();
-        $traverser->addVisitor(new NameResolver());
+        $traverser->addVisitor(new NameResolver(options: ['preserveOriginalNames' => true]));
         $traverser->addVisitor(new ExceptionDecoratorVisitor($pathname));
         $traverser->addVisitor(new ContractsApplicatorVisitor($pathname, $this->contracts, $this->injector));
 

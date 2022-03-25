@@ -11,6 +11,10 @@ declare(strict_types=1);
 
 namespace Serafim\Contracts\Compiler;
 
+/**
+ * @internal This is an internal library interface, please do not use it in your code.
+ * @psalm-internal Serafim\Contracts
+ */
 interface CompilerInterface
 {
     /**
