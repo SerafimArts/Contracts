@@ -10,5 +10,5 @@
 declare(strict_types=1);
 
 namespace Serafim\Contracts {
-    Runtime::init();
+    Runtime::boot();
 }
