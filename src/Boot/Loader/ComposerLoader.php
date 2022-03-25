@@ -13,6 +13,10 @@ namespace Serafim\Contracts\Boot\Loader;
 
 use Composer\Autoload\ClassLoader;
 
+/**
+ * @internal This is an internal library class, please do not use it in your code.
+ * @psalm-internal Serafim\Contracts\Boot
+ */
 final class ComposerLoader implements LoaderInterface
 {
     /**

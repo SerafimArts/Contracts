@@ -9,17 +9,17 @@
 
 declare(strict_types=1);
 
-namespace Serafim\Contracts\Boot\Loader;
+namespace Serafim\Contracts\Boot\Cache;
 
 /**
  * @internal This is an internal library interface, please do not use it in your code.
- * @psalm-internal Serafim\Contracts\Boot
+ * @psalm-internal Serafim\Contracts
  */
-interface LoaderInterface
+interface RebuildableInterface
 {
     /**
-     * @param class-string $class
-     * @return non-empty-string|null
+     * @param bool|null $enabled
+     * @return bool
      */
-    public function getPathname(string $class): ?string;
+    public function rebuild(bool $enabled = null): bool;
 }
