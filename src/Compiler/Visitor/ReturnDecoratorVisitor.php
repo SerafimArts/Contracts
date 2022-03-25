@@ -13,10 +13,15 @@ namespace Serafim\Contracts\Compiler\Visitor;
 
 use PhpParser\Node;
 use PhpParser\Node\Expr\Variable;
-use PhpParser\NodeTraverser;
+use PhpParser\Node\Name;
+use PhpParser\Node\Stmt\Expression;
 use PhpParser\NodeVisitorAbstract;
 
-class ReturnDecoratorVisitor extends NodeVisitorAbstract
+/**
+ * @internal This is an internal library class, please do not use it in your code.
+ * @psalm-internal Serafim\Contracts\Compiler
+ */
+final class ReturnDecoratorVisitor extends NodeVisitorAbstract
 {
     /**
      * @param Variable $return
@@ -28,27 +33,27 @@ class ReturnDecoratorVisitor extends NodeVisitorAbstract
 
     /**
      * @param Node $node
-     * @return int|null
-     */
-    public function enterNode(Node $node): ?int
-    {
-        if ($node instanceof Node\Stmt\Return_) {
-            return NodeTraverser::DONT_TRAVERSE_CHILDREN;
-        }
-
-        return parent::enterNode($node);
-    }
-
-    /**
-     * @param Node $node
-     * @return null
+     * @return void|list<Node>
      */
     public function leaveNode(Node $node)
     {
-        if ($node instanceof Node\Stmt\Return_) {
-            $node->expr = new Node\Expr\Assign($this->return, $node->expr);
-        }
+       if (!$node instanceof Node\Stmt\Return_) {
+           return;
+       }
 
-        return parent::leaveNode($node);
+       if ($node->expr !== null) {
+           $node->expr = new Node\Expr\Assign($this->return, $node->expr);
+
+           return;
+       }
+
+        return [
+            new Expression(
+                new Node\Expr\Assign($this->return, new Node\Expr\ConstFetch(
+                    new Name('null')
+                ))
+            ),
+            new Node\Stmt\Return_(),
+        ];
     }
 }

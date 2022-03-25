@@ -17,9 +17,13 @@ use PhpParser\Node\Expr\StaticCall;
 use PhpParser\Node\Name\FullyQualified;
 use PhpParser\NodeTraverser;
 use PhpParser\NodeVisitorAbstract;
-use Serafim\Contracts\Runtime\Exception;
+use Serafim\Contracts\Exception\Decorator;
 
-class ExceptionDecoratorVisitor extends NodeVisitorAbstract
+/**
+ * @internal This is an internal library class, please do not use it in your code.
+ * @psalm-internal Serafim\Contracts\Compiler
+ */
+final class ExceptionDecoratorVisitor extends NodeVisitorAbstract
 {
     /**
      * @psalm-taint-sink file $file
@@ -49,7 +53,7 @@ class ExceptionDecoratorVisitor extends NodeVisitorAbstract
      */
     private function decorate(Expr $expr): Expr
     {
-        return new StaticCall(new FullyQualified(Exception::class), 'withLocation', [
+        return new StaticCall(new FullyQualified(Decorator::class), 'decorate', [
             new Node\Arg($expr),
             new Node\Arg(new Node\Scalar\String_($this->file)),
             new Node\Arg(new Node\Scalar\LNumber($expr->getLine()))

@@ -17,20 +17,14 @@ use PhpParser\NodeVisitorAbstract;
 use Serafim\Contracts\Attribute\Invariant;
 use Serafim\Contracts\Compiler\ContractsParser;
 use Serafim\Contracts\Compiler\MethodInjector;
-use Serafim\Contracts\Compiler\Statement\InvariantStatement;
+use Serafim\Contracts\Compiler\Visitor\ContractsApplicatorVisitor\InvariantStatement;
 
-class ContractsApplicatorVisitor extends NodeVisitorAbstract
+/**
+ * @internal This is an internal library class, please do not use it in your code.
+ * @psalm-internal Serafim\Contracts\Compiler
+ */
+final class ContractsApplicatorVisitor extends NodeVisitorAbstract
 {
-    /**
-     * @var non-empty-string
-     */
-    private string $file;
-
-    /**
-     * @var non-empty-string|null
-     */
-    private ?string $namespace = null;
-
     /**
      * @var class-string|null
      */
@@ -42,46 +36,16 @@ class ContractsApplicatorVisitor extends NodeVisitorAbstract
     private array $invariants = [];
 
     /**
-     * @var ContractsParser
-     */
-    private ContractsParser $parser;
-
-    /**
-     * @var MethodInjector
-     */
-    private MethodInjector $injector;
-
-    /**
      * @psalm-taint-sink file $file
      * @param non-empty-string $file
      * @param ContractsParser $parser
      * @param MethodInjector $injector
      */
-    public function __construct(string $file, ContractsParser $parser, MethodInjector $injector)
-    {
-        $this->file = $file;
-        $this->parser = $parser;
-        $this->injector = $injector;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public function leaveNode(Node $node): void
-    {
-        if ($node instanceof Node\Stmt\Namespace_) {
-            $this->namespace = null;
-        }
-
-        // Clear all invariants
-        if ($node instanceof Node\Stmt\Class_) {
-            $this->invariants = [];
-            $this->class = null;
-        }
-
-        if ($node instanceof Node\Stmt\ClassMethod) {
-            $this->injector->inject($this->file, $node, $this->invariants);
-        }
+    public function __construct(
+        private readonly string $file,
+        private readonly ContractsParser $parser,
+        private readonly MethodInjector $injector
+    ) {
     }
 
     /**
@@ -90,10 +54,6 @@ class ContractsApplicatorVisitor extends NodeVisitorAbstract
      */
     public function enterNode(Node $node): ?int
     {
-        if ($node instanceof Node\Stmt\Namespace_) {
-            $this->namespace = $node->name->toString();
-        }
-
         if ($node instanceof Node\Stmt\Class_) {
             $this->class = $node->name->toString();
         }
@@ -103,6 +63,22 @@ class ContractsApplicatorVisitor extends NodeVisitorAbstract
         }
 
         return parent::enterNode($node);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function leaveNode(Node $node): void
+    {
+        // Clear all invariants
+        if ($node instanceof Node\Stmt\Class_) {
+            $this->invariants = [];
+            $this->class = null;
+        }
+
+        if ($node instanceof Node\Stmt\ClassMethod) {
+            $this->injector->inject($this->file, $node, $this->invariants);
+        }
     }
 
     /**
