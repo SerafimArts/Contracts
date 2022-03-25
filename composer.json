@@ -19,7 +19,8 @@
         "vimeo/psalm": "^4.22",
         "phpunit/phpunit": "^9.5",
         "beberlei/assert": "^3.3",
-        "symfony/var-dumper": "^5.4|^6.0"
+        "symfony/var-dumper": "^5.4|^6.0",
+        "jetbrains/phpstorm-attributes": "^1.0"
     },
     "autoload-dev": {
         "psr-4": {
@@ -38,10 +39,16 @@
     "suggest": {
         "beberlei/assert": "^3.0 Thin assertion library for input validation in business models"
     },
+    "scripts": {
+        "psalm": "psalm --no-cache"
+    },
     "config": {
         "optimize-autoloader": true,
         "bin-compat": "full",
-        "sort-packages": true
+        "sort-packages": true,
+        "allow-plugins": {
+            "serafim/dbc": true
+        }
     },
     "minimum-stability": "dev",
     "prefer-stable": true
