@@ -11,9 +11,9 @@ declare(strict_types=1);
 
 namespace Serafim\Contracts;
 
-use Serafim\Contracts\Boot\Interceptor;
+use Serafim\Contracts\Boot\Cache\RebuildableInterface;
 
-final class Runtime implements FacadeInterface
+final class Runtime
 {
     /**
      * @var non-empty-string
@@ -21,9 +21,9 @@ final class Runtime implements FacadeInterface
     private const DEFAULT_STORAGE = __DIR__ . '/../storage';
 
     /**
-     * @var Interceptor|null
+     * @var Processor|null
      */
-    private static ?Interceptor $interceptor = null;
+    private static ?Processor $interceptor = null;
 
     /**
      * @var bool
@@ -31,40 +31,49 @@ final class Runtime implements FacadeInterface
     private static bool $enabled = false;
 
     /**
-     * @internal This method can be called only from within the auto-loaded file using Composer.
-     * @return bool
+     * @return Processor
      */
-    public static function init(): bool
+    public static function boot(): Processor
     {
         if (self::$interceptor === null) {
-            self::$interceptor = Interceptor::fromComposer(self::DEFAULT_STORAGE);
+            self::$interceptor = Processor::fromComposer(self::DEFAULT_STORAGE);
             self::auto();
-
-            return true;
         }
 
-        return false;
+        return self::$interceptor;
     }
 
     /**
+     * Specifying the directory where decorated files are saved.
+     *
      * @psalm-taint-sink file $directory
      * @param non-empty-string $directory
      */
     public static function cache(string $directory): void
     {
-        self::$interceptor->cache($directory);
+        $interceptor = self::boot();
+        $interceptor->cache->in($directory);
     }
 
     /**
-     * {@inheritDoc}
+     * Adds namespaces or classes to the list of files to be decorated.
+     *
+     * @param non-empty-string|class-string $namespace
+     * @param (non-empty-string|class-string) ...$namespaces
+     * @return void
      */
     public static function listen(string $namespace, string ...$namespaces): void
     {
-        self::$interceptor->allow($namespace, ...$namespaces);
+        $interceptor = self::boot();
+        $interceptor->allow($namespace, ...$namespaces);
     }
 
     /**
-     * {@inheritDoc}
+     * Enable DbC runtime assertions ({@see enable()}) in case of PHP
+     * `assert.active` are enabled in `php.ini` configuration file or
+     * disable ({@see disable()}) otherwise.
+     *
+     * @return bool
      */
     public static function auto(): bool
     {
@@ -80,14 +89,17 @@ final class Runtime implements FacadeInterface
     }
 
     /**
-     * {@inheritDoc}
+     * Forces all DbC assertion checks on.
+     *
+     * This is the default value for DEBUG environment.
+     *
+     * @return bool
      */
     public static function enable(): bool
     {
-        assert(self::$interceptor !== null);
-
         if (self::$enabled === false) {
-            self::$interceptor->enable();
+            $interceptor = self::boot();
+            $interceptor->enable();
 
             return self::$enabled = true;
         }
@@ -96,18 +108,36 @@ final class Runtime implements FacadeInterface
     }
 
     /**
-     * {@inheritDoc}
+     * Disables all DbC assertions.
+     *
+     * This is the default value for PRODUCTION environment.
+     *
+     * @return bool
      */
     public static function disable(): bool
     {
-        assert(self::$interceptor !== null);
-
         if (self::$enabled === true) {
-            self::$interceptor->disable();
+            $interceptor = self::boot();
+            $interceptor->disable();
 
             return ! (self::$enabled = false);
         }
 
         return false;
+    }
+
+    /**
+     * @param bool $enabled
+     * @return bool
+     */
+    public static function rebuild(bool $enabled = true): bool
+    {
+        $interceptor = self::boot();
+
+        if ($interceptor->cache instanceof RebuildableInterface) {
+            return $interceptor->cache->rebuild($enabled);
+        }
+
+        throw new \BadMethodCallException('Cache driver does not support rebuild behaviour');
     }
 }
