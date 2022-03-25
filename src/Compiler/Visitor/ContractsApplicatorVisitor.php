@@ -9,52 +9,51 @@
 
 declare(strict_types=1);
 
-namespace Serafim\Contracts\Internal\Compiler;
+namespace Serafim\Contracts\Compiler\Visitor;
 
 use PhpParser\Node;
 use PhpParser\NodeTraverser;
 use PhpParser\NodeVisitorAbstract;
 use Serafim\Contracts\Attribute\Invariant;
-use Serafim\Contracts\Internal\Statement\InvariantStatement;
+use Serafim\Contracts\Compiler\ContractsParser;
+use Serafim\Contracts\Compiler\MethodInjector;
+use Serafim\Contracts\Compiler\Statement\InvariantStatement;
 
-/**
- * @internal AnalyzerVisitor is an internal library class, please do not use it in your code.
- * @psalm-internal Serafim\Contracts
- */
 class ContractsApplicatorVisitor extends NodeVisitorAbstract
 {
     /**
-     * @var string
+     * @var non-empty-string
      */
-    private $file;
+    private string $file;
 
     /**
-     * @var string|null
+     * @var non-empty-string|null
      */
-    private $namespace;
+    private ?string $namespace = null;
 
     /**
-     * @var string|null
+     * @var class-string|null
      */
-    private $class;
+    private ?string $class = null;
 
     /**
-     * @var InvariantStatement[]
+     * @var list<InvariantStatement>
      */
-    private $invariants = [];
+    private array $invariants = [];
 
     /**
      * @var ContractsParser
      */
-    private $parser;
+    private ContractsParser $parser;
 
     /**
      * @var MethodInjector
      */
-    private $injector;
+    private MethodInjector $injector;
 
     /**
-     * @param string $file
+     * @psalm-taint-sink file $file
+     * @param non-empty-string $file
      * @param ContractsParser $parser
      * @param MethodInjector $injector
      */
@@ -66,11 +65,9 @@ class ContractsApplicatorVisitor extends NodeVisitorAbstract
     }
 
     /**
-     * @param Node $node
-     * @return mixed|void
-     * @throws \Exception
+     * {@inheritDoc}
      */
-    public function leaveNode(Node $node)
+    public function leaveNode(Node $node): void
     {
         if ($node instanceof Node\Stmt\Namespace_) {
             $this->namespace = null;

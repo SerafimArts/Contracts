@@ -9,15 +9,11 @@
 
 declare(strict_types=1);
 
-namespace Serafim\Contracts\Internal;
+namespace Serafim\Contracts\Boot\Loader;
 
 use Composer\Autoload\ClassLoader;
 
-/**
- * @internal Composer is an internal library class, please do not use it in your code.
- * @psalm-internal Serafim\Contracts
- */
-final class Composer
+final class ComposerLoader implements LoaderInterface
 {
     /**
      * @var string
@@ -30,10 +26,32 @@ final class Composer
     private const ERROR_INVALID_INIT_LOCATION = 'File "%s" MUST be loaded though Composer';
 
     /**
-     * @return ClassLoader
+     * @param ClassLoader $loader
      */
-    public static function getClassLoader(): ClassLoader
+    public function __construct(
+        private readonly ClassLoader $loader,
+    ) {
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function getPathname(string $class): ?string
     {
+        return $this->loader->findFile($class) ?: null;
+    }
+
+    /**
+     * @psalm-taint-sink file $autoload
+     * @param non-empty-string|null $autoload
+     * @return self
+     */
+    public static function create(string $autoload = null): self
+    {
+        if ($autoload !== null) {
+            return new self(require $autoload);
+        }
+
         $file  = null;
         $trace = \debug_backtrace(\DEBUG_BACKTRACE_IGNORE_ARGS) ?? [];
 
@@ -45,7 +63,7 @@ final class Composer
             }
 
             if (\str_starts_with($current['class'] ?? '', self::GENERATED_LOADER_PREFIX)) {
-                return $current['class']::getLoader();
+                return new self($current['class']::getLoader());
             }
         }
 

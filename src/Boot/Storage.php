@@ -9,48 +9,45 @@
 
 declare(strict_types=1);
 
-namespace Serafim\Contracts\Internal;
+namespace Serafim\Contracts\Boot;
 
-use JetBrains\PhpStorm\Pure;
-
-/**
- * @internal Storage is an internal library class, please do not use it in your code.
- * @psalm-internal Serafim\Contracts
- */
 final class Storage
 {
     /**
-     * @var string
+     * @var non-empty-string
      */
     private const ERROR_CREATE_DIRECTORY = 'Storage directory "%s" was not created';
 
     /**
-     * @var string
+     * @var non-empty-string
      */
-    private $directory;
+    private readonly string $directory;
 
     /**
-     * @param string $directory
+     * @psalm-taint-sink file $directory
+     * @param non-empty-string $directory
      */
-    public function __construct(string $directory)
-    {
+    public function __construct(
+        string $directory,
+        private bool $debug = false
+    ) {
         $this->directory = \rtrim($directory, '/\\');
     }
 
     /**
-     * @param string $class
-     * @return string
+     * @param class-string $class
+     * @return non-empty-string
      */
-    #[Pure]
     private function key(string $class): string
     {
         return $this->directory . '/' . \str_replace('\\', '/', $class) . '.php';
     }
 
     /**
-     * @param string $class
-     * @param string $pathname
-     * @param \Closure $then
+     * @psalm-taint-sink file $pathname
+     * @param class-string $class
+     * @param non-empty-string $pathname
+     * @param \Closure():string $then
      * @return string
      */
     public function cached(string $class, string $pathname, \Closure $then): string
@@ -62,8 +59,8 @@ final class Storage
             throw new \RuntimeException(\sprintf(self::ERROR_CREATE_DIRECTORY, $concurrent));
         }
 
-        if (! \is_file($target) || \filemtime($pathname) > \filemtime($target)) {
-            \file_put_contents($target, $result = $then(), \LOCK_EX);
+        if (!\is_file($target) || \filemtime($pathname) > \filemtime($target) || $this->debug) {
+            \file_put_contents($target, $then(), \LOCK_EX);
         }
 
         return $target;

@@ -19,9 +19,9 @@ use Serafim\Contracts\Attribute\Verify;
 class Account
 {
     /**
-     * @var int
+     * @var positive-int|0
      */
-    protected $balance = 0;
+    protected int $balance = 0;
 
     /**
      * Deposits fixed amount of money to the account.
@@ -38,11 +38,10 @@ class Account
     /**
      * Withdraw amount of money from account.
      *
-     * @param int $amount
+     * @param positive-int $amount
      */
     #[Verify('$amount <= $this->balance')]
     #[Verify('$amount > 0')]
-    #[Verify('$amount <= 50')]
     #[Ensure('$this->balance === $old->balance - $amount')]
     public function withdraw(int $amount): void
     {
@@ -52,7 +51,7 @@ class Account
     /**
      * Returns current balance.
      *
-     * @return positive-int
+     * @return positive-int|0
      */
     #[Ensure('$result === $this->balance')]
     public function getBalance(): int

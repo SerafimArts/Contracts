@@ -9,50 +9,54 @@
 
 declare(strict_types=1);
 
-namespace Serafim\Contracts\Internal;
+namespace Serafim\Contracts\Boot;
 
-use Composer\Autoload\ClassLoader;
-use function Composer\Autoload\includeFile;
+use Serafim\Contracts\Boot\Loader\ComposerLoader;
+use Serafim\Contracts\Boot\Loader\LoaderInterface;
+use Serafim\Contracts\Compiler\Compiler;
+use Serafim\Contracts\Runtime\Exception;
 
-/**
- * @internal Interceptor is an internal library class, please do not use it in your code.
- * @psalm-internal Serafim\Contracts
- */
 final class Interceptor
 {
     /**
-     * @var array<string|class-string>
+     * @var list<non-empty-string|class-string>
      */
-    private $namespaces = [];
-
-    /**
-     * @var ClassLoader
-     */
-    private $loader;
+    private array $namespaces = [];
 
     /**
      * @var Storage
      */
-    private $storage;
+    private Storage $storage;
 
     /**
      * @var Compiler
      */
-    private $compiler;
+    private readonly Compiler $compiler;
 
     /**
-     * @param ClassLoader $loader
-     * @param string|null $storage
+     * @psalm-taint-sink file $storage
+     * @param LoaderInterface $loader
+     * @param non-empty-string|null $storage
      */
-    public function __construct(ClassLoader $loader, string $storage = null)
+    public function __construct(private readonly LoaderInterface $loader, string $storage = null)
     {
-        $this->loader = $loader;
-        $this->storage = new Storage($storage ?? \sys_get_temp_dir());
         $this->compiler = new Compiler();
+        $this->storage = new Storage($storage ?? \sys_get_temp_dir());
     }
 
     /**
-     * @param string $directory
+     * @psalm-taint-sink file $storage
+     * @param non-empty-string|null $storage
+     * @return static
+     */
+    public static function fromComposer(string $storage = null): self
+    {
+        return new self(ComposerLoader::create(), $storage);
+    }
+
+    /**
+     * @psalm-taint-sink file $directory
+     * @param non-empty-string $directory
      * @return $this
      */
     public function cache(string $directory): self
@@ -63,9 +67,10 @@ final class Interceptor
     }
 
     /**
-     * @param array<string|class-string> $namespaces
+     * @param non-empty-string|class-string ...$namespaces
+     * @return void
      */
-    public function allow(array $namespaces): void
+    public function allow(string ...$namespaces): void
     {
         foreach ($namespaces as $namespace) {
             $this->namespaces[] = \trim($namespace, '\\');
@@ -74,24 +79,22 @@ final class Interceptor
 
     /**
      * @return void
-     * @psalm-suppress ArgumentTypeCoercion
      */
     public function enable(): void
     {
-        \spl_autoload_register([$this, 'loadClass'], true, true);
+        \spl_autoload_register($this->loadClass(...), true, true);
     }
 
     /**
      * @return void
-     * @psalm-suppress UnusedFunctionCall
      */
     public function disable(): void
     {
-        \spl_autoload_unregister([$this, 'loadClass']);
+        \spl_autoload_unregister($this->loadClass(...));
     }
 
     /**
-     * @param string $class
+     * @param class-string $class
      * @return bool
      */
     public function isAllowed(string $class): bool
@@ -119,31 +122,25 @@ final class Interceptor
         try {
             return $this->findAndInclude($class);
         } catch (\Throwable $e) {
-            $class = \get_class($e);
-
-            $instance = new $class($e->getMessage(), $e->getCode(), $e->getPrevious());
-
-            throw Exception::withLocation($instance, $e->getFile(), $e->getLine());
+            throw Exception::decorate($e);
         }
     }
 
     /**
-     * @param string $class
+     * @param class-string $class
      * @return bool
      */
     private function findAndInclude(string $class): bool
     {
-        $file = $this->loader->findFile($class);
+        $file = $this->loader->getPathname($class);
 
         if ($file === false) {
             return false;
         }
 
-        $compiled = $this->storage->cached($class, $file, function () use ($file) {
+        require $this->storage->cached($class, $file, function () use ($file) {
             return $this->compiler->compile($file);
         });
-
-        includeFile($compiled);
 
         return true;
     }

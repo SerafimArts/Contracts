@@ -9,11 +9,13 @@
 
 declare(strict_types=1);
 
-namespace Serafim\Contracts\Exception;
+namespace Serafim\Contracts\Boot\Loader;
 
-/**
- * An exception thrown when a precondition is violated.
- */
-class PreconditionException extends AssertionException
+interface LoaderInterface
 {
+    /**
+     * @param class-string $class
+     * @return non-empty-string|null
+     */
+    public function getPathname(string $class): ?string;
 }

@@ -9,7 +9,7 @@
 
 declare(strict_types=1);
 
-namespace Serafim\Contracts\Internal\Statement;
+namespace Serafim\Contracts\Compiler\Statement;
 
 use PhpParser\Node\Arg;
 use PhpParser\Node\Expr;
@@ -18,13 +18,9 @@ use PhpParser\Node\Name\FullyQualified;
 use PhpParser\Node\Scalar\LNumber;
 use PhpParser\Node\Scalar\String_;
 use PhpParser\Node\Stmt\Expression;
-use Serafim\Contracts\Exception\PostconditionException;
+use Serafim\Contracts\Exception\PreconditionException;
 
-/**
- * @internal EnsureStatement is an internal library class, please do not use it in your code.
- * @psalm-internal Serafim\Contracts
- */
-class EnsureStatement extends Statement
+final class VerifyStatement extends Statement
 {
     /**
      * @param Expr $expression
@@ -32,7 +28,7 @@ class EnsureStatement extends Statement
      */
     protected function wrap(Expr $expression): Expression
     {
-        $exception = new FullyQualified(PostconditionException::class);
+        $exception = new FullyQualified(PreconditionException::class);
 
         return new Expression(new StaticCall($exception, 'throwIf', [
             new Arg($expression),

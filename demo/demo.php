@@ -18,4 +18,4 @@ Runtime::enable();
 Runtime::listen('Serafim\Contracts\Demo');
 
 $account = new Account();
-$account->deposit(-42);
+$account->withdraw(42);

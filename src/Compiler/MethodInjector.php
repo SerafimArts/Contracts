@@ -9,7 +9,7 @@
 
 declare(strict_types=1);
 
-namespace Serafim\Contracts\Internal\Compiler;
+namespace Serafim\Contracts\Compiler;
 
 use PhpParser\Node\Expr\Assign;
 use PhpParser\Node\Expr\Clone_;
@@ -22,33 +22,25 @@ use PhpParser\NodeFinder;
 use PhpParser\NodeTraverser;
 use Serafim\Contracts\Attribute\Ensure;
 use Serafim\Contracts\Attribute\Verify;
-use Serafim\Contracts\Internal\Statement\EnsureStatement;
-use Serafim\Contracts\Internal\Statement\InvariantStatement;
-use Serafim\Contracts\Internal\Statement\VerifyStatement;
+use Serafim\Contracts\Compiler\Statement\EnsureStatement;
+use Serafim\Contracts\Compiler\Statement\InvariantStatement;
+use Serafim\Contracts\Compiler\Statement\VerifyStatement;
+use Serafim\Contracts\Compiler\Visitor\ReturnDecoratorVisitor;
 
-/**
- * @internal MethodInjector is an internal library class, please do not use it in your code.
- * @psalm-internal Serafim\Contracts
- */
-class MethodInjector
+final class MethodInjector
 {
-    /**
-     * @var ContractsParser
-     */
-    private $parser;
-
     /**
      * @param ContractsParser $parser
      */
-    public function __construct(ContractsParser $parser)
-    {
-        $this->parser = $parser;
+    public function __construct(
+        private readonly ContractsParser $parser
+    ) {
     }
 
     /**
-     * @param string $file
+     * @param non-empty-string $file
      * @param ClassMethod $method
-     * @param InvariantStatement[] $invariants
+     * @param list<InvariantStatement> $invariants
      * @return ClassMethod
      * @throws \Exception
      */
@@ -88,9 +80,10 @@ class MethodInjector
     }
 
     /**
-     * @param string $file
+     * @psalm-taint-sink file $file
+     * @param non-empty-string $file
      * @param ClassMethod $method
-     * @return VerifyStatement[]
+     * @return list<VerifyStatement>
      */
     private function getPreconditions(string $file, ClassMethod $method): iterable
     {
@@ -104,7 +97,7 @@ class MethodInjector
      *
      * @param ClassMethod $method
      * @param class-string<T> $needle
-     * @return iterable<T>
+     * @return list<T>
      */
     private function getAttributes(ClassMethod $method, string $needle): iterable
     {
@@ -118,17 +111,18 @@ class MethodInjector
     }
 
     /**
-     * @param string $prefix
+     * @param non-empty-string $prefix
      * @return Variable
      * @throws \Exception
      */
     private function generateVariable(string $prefix): Variable
     {
-        return new Variable('__' . $prefix . \hash('crc32', \random_bytes(32)));
+        return new Variable('__' . $prefix . \hash('xxh64', \random_bytes(32)));
     }
 
     /**
-     * @param string $file
+     * @psalm-taint-sink file $file
+     * @param non-empty-string $file
      * @param ClassMethod $method
      * @return EnsureStatement[]
      */

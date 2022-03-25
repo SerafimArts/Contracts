@@ -9,30 +9,21 @@
 
 declare(strict_types=1);
 
-namespace Serafim\Contracts\Internal\Compiler;
+namespace Serafim\Contracts\Compiler\Visitor;
 
 use PhpParser\Node;
 use PhpParser\Node\Expr\Variable;
 use PhpParser\NodeTraverser;
 use PhpParser\NodeVisitorAbstract;
 
-/**
- * @internal ReturnDecoratorVisitor is an internal library class, please do not use it in your code.
- * @psalm-internal Serafim\Contracts
- */
 class ReturnDecoratorVisitor extends NodeVisitorAbstract
 {
     /**
-     * @var Variable
-     */
-    private $return;
-
-    /**
      * @param Variable $return
      */
-    public function __construct(Variable $return)
-    {
-        $this->return = $return;
+    public function __construct(
+        private readonly Variable $return
+    ) {
     }
 
     /**

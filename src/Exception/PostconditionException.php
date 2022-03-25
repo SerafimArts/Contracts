@@ -16,5 +16,4 @@ namespace Serafim\Contracts\Exception;
  */
 class PostconditionException extends AssertionException
 {
-
 }

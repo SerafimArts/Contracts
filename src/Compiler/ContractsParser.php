@@ -9,7 +9,7 @@
 
 declare(strict_types=1);
 
-namespace Serafim\Contracts\Internal\Compiler;
+namespace Serafim\Contracts\Compiler;
 
 use PhpParser\Error;
 use PhpParser\Node;
@@ -17,43 +17,36 @@ use PhpParser\Node\Attribute;
 use PhpParser\Node\Expr;
 use PhpParser\Node\Stmt\Expression;
 use PhpParser\NodeAbstract;
-use PhpParser\Parser;
+use PhpParser\Parser as ParserInterface;
 use Serafim\Contracts\Attribute\Ensure;
 use Serafim\Contracts\Attribute\Invariant;
 use Serafim\Contracts\Attribute\Verify;
+use Serafim\Contracts\Compiler\Statement\EnsureStatement;
+use Serafim\Contracts\Compiler\Statement\InvariantStatement;
+use Serafim\Contracts\Compiler\Statement\Statement;
+use Serafim\Contracts\Compiler\Statement\VerifyStatement;
 use Serafim\Contracts\Exception\SpecificationException;
-use Serafim\Contracts\Internal\Statement\EnsureStatement;
-use Serafim\Contracts\Internal\Statement\InvariantStatement;
-use Serafim\Contracts\Internal\Statement\Statement;
-use Serafim\Contracts\Internal\Statement\VerifyStatement;
 
-/**
- * @internal ContractsParser is an internal library class, please do not use it in your code.
- * @psalm-internal Serafim\Contracts
- */
 final class ContractsParser
 {
     /**
-     * @var string
+     * @var non-empty-string
      */
     private const ERROR_EMPTY_EXPRESSION = '%s expression cannot be empty';
 
     /**
-     * @var Parser
+     * @param ParserInterface $parser
      */
-    private $parser;
-
-    /**
-     * @param Parser $parser
-     */
-    public function __construct(Parser $parser)
-    {
-        $this->parser = $parser;
+    public function __construct(
+        private readonly ParserInterface $parser,
+    ) {
     }
 
     /**
-     * @param string $file
-     * @param string $expression
+     * @psalm-taint-sink file $file
+     * @psalm-taint-sink eval $expression
+     * @param non-empty-string $file
+     * @param non-empty-string $expression
      * @param class-string $type
      * @param NodeAbstract $node
      * @return Expr
@@ -78,11 +71,12 @@ final class ContractsParser
     }
 
     /**
-     * @param string $file
+     * @psalm-taint-sink file $file
+     * @param non-empty-string $file
      * @param Attribute $node
      * @param class-string $attr
      * @param class-string $stmt
-     * @return Statement[]
+     * @return list<Statement>
      */
     private function statements(string $file, Attribute $node, string $attr, string $stmt): iterable
     {
@@ -100,9 +94,10 @@ final class ContractsParser
     }
 
     /**
-     * @param string $file
+     * @psalm-taint-sink file $file
+     * @param non-empty-string $file
      * @param Attribute $node
-     * @return InvariantStatement[]
+     * @return list<InvariantStatement>
      */
     public function invariant(string $file, Attribute $node): iterable
     {
@@ -110,9 +105,10 @@ final class ContractsParser
     }
 
     /**
-     * @param string $file
+     * @psalm-taint-sink file $file
+     * @param non-empty-string $file
      * @param Attribute $node
-     * @return EnsureStatement[]
+     * @return list<EnsureStatement>
      */
     public function ensure(string $file, Attribute $node): iterable
     {
@@ -120,9 +116,10 @@ final class ContractsParser
     }
 
     /**
-     * @param string $file
+     * @psalm-taint-sink file $file
+     * @param non-empty-string $file
      * @param Attribute $node
-     * @return VerifyStatement[]
+     * @return list<VerifyStatement>
      */
     public function verify(string $file, Attribute $node): iterable
     {

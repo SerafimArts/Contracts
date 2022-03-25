@@ -11,9 +11,6 @@ declare(strict_types=1);
 
 namespace Serafim\Contracts\Exception;
 
-/**
- * An exception thrown when a precondition is violated.
- */
-class PreconditionException extends AssertionException
+interface ContractsExceptionInterface extends \Throwable
 {
 }

@@ -20,12 +20,9 @@ use Serafim\Contracts\Exception\PreconditionException;
  *
  * When checking of contracts is enabled, precondition are checked at method
  * entry and throw a {@see PreconditionException} when it is violated.
- *
- * @Annotation
- * @Target({ "METHOD" })
  */
 #[\Attribute(\Attribute::TARGET_METHOD | \Attribute::IS_REPEATABLE)]
-class Verify extends Contract
+final class Verify extends Contract
 {
     /**
      * The precondition expression that must be met by the annotated method.
@@ -36,18 +33,13 @@ class Verify extends Contract
      * such as private fields when the method is public, but this is considered
      * bad style.
      *
-     * @var string
-     */
-    public $value;
-
-    /**
-     * @param string $value
+     * @psalm-taint-sink eval $expr
+     * @param non-empty-string $expr
      */
     public function __construct(
         #[Language('PHP')]
-        string $value
+        public readonly string $expr
     ) {
-        $this->value = $value;
     }
 
     /**
@@ -55,6 +47,6 @@ class Verify extends Contract
      */
     public function __toString(): string
     {
-        return $this->value;
+        return $this->expr;
     }
 }

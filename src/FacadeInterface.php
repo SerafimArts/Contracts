@@ -11,7 +11,7 @@ declare(strict_types=1);
 
 namespace Serafim\Contracts;
 
-interface ApiInterface
+interface FacadeInterface
 {
     /**
      * @return bool
@@ -29,14 +29,15 @@ interface ApiInterface
     public static function disable(): bool;
 
     /**
-     * @param string $namespace
+     * @param string|class-string $namespace
      * @param string|class-string ...$namespaces
      * @return void
      */
     public static function listen(string $namespace, string ...$namespaces): void;
 
     /**
-     * @param string $directory
+     * @psalm-taint-sink file $directory
+     * @param non-empty-string $directory
      */
     public static function cache(string $directory): void;
 }

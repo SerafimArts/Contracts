@@ -23,12 +23,9 @@ use Serafim\Contracts\Exception\PostconditionException;
  * exit, when the method exits normally, of the and throw a
  * {@see PostconditionException} when they are violated. Postconditions are not
  * checked when the method exits by throwing an exception.
- *
- * @Annotation
- * @Target({ "METHOD" })
  */
 #[\Attribute(\Attribute::TARGET_METHOD | \Attribute::IS_REPEATABLE)]
-class Ensure extends Contract
+final class Ensure extends Contract
 {
     /**
      * The postcondition that must be met by the annotated method. The
@@ -37,21 +34,16 @@ class Ensure extends Contract
      * may need to refer to the old value of an expression and the value
      * returned by the annotated method, the following extensions are allowed:
      *
-     * The keyword "$result" refers to the value returned from the method, if
-     * any. It is an error to have a method parameter named "$result".
+     * The keyword {@see $result} refers to the value returned from the method,
+     * if any. It is an error to have a method parameter named {@see $result}.
      *
-     * @var string
-     */
-    public $value;
-
-    /**
-     * @param string $value
+     * @psalm-taint-sink eval $expr
+     * @param non-empty-string $expr
      */
     public function __construct(
         #[Language('PHP')]
-        string $value
+        public readonly string $expr
     ) {
-        $this->value = $value;
     }
 
     /**
@@ -59,6 +51,6 @@ class Ensure extends Contract
      */
     public function __toString(): string
     {
-        return $this->value;
+        return $this->expr;
     }
 }

@@ -15,23 +15,28 @@ use JetBrains\PhpStorm\Pure;
 
 /**
  * An error in contract annotation usage.
+ *
+ * @psalm-consistent-constructor
  */
-class SpecificationException extends \InvalidArgumentException
+class SpecificationException extends \InvalidArgumentException implements ContractsExceptionInterface
 {
     /**
-     * @var string
+     * @var non-empty-string
      */
     private const ERROR_INCOMPATIBLE_TYPE = '%s MUST contain PHP code string';
 
     /**
+     * @psalm-taint-sink file $file
      * @param string $message
-     * @param string $file
-     * @param int $line
+     * @param non-empty-string $file
+     * @param positive-int $line
      * @return static
      */
-    public static function create(string $message, string $file, int $line): self
+    public static function create(string $message, string $file, int $line): static
     {
-        $instance = new self($message);
+        assert($line > 0, new \InvalidArgumentException('Line must be greater than 0'));
+
+        $instance = new static($message);
         $instance->file = $file;
         $instance->line = $line;
 

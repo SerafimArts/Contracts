@@ -9,7 +9,7 @@
 
 declare(strict_types=1);
 
-namespace Serafim\Contracts\Internal\Compiler;
+namespace Serafim\Contracts\Compiler\Visitor;
 
 use PhpParser\Node;
 use PhpParser\Node\Expr;
@@ -17,25 +17,17 @@ use PhpParser\Node\Expr\StaticCall;
 use PhpParser\Node\Name\FullyQualified;
 use PhpParser\NodeTraverser;
 use PhpParser\NodeVisitorAbstract;
-use Serafim\Contracts\Internal\Exception;
+use Serafim\Contracts\Runtime\Exception;
 
-/**
- * @internal ExceptionDecoratorVisitor is an internal library class, please do not use it in your code.
- * @psalm-internal Serafim\Contracts
- */
 class ExceptionDecoratorVisitor extends NodeVisitorAbstract
 {
     /**
-     * @var string
+     * @psalm-taint-sink file $file
+     * @param non-empty-string $file
      */
-    private $file;
-
-    /**
-     * @param string $file
-     */
-    public function __construct(string $file)
-    {
-        $this->file = $file;
+    public function __construct(
+        private readonly string $file,
+    ) {
     }
 
     /**
@@ -51,6 +43,10 @@ class ExceptionDecoratorVisitor extends NodeVisitorAbstract
         }
     }
 
+    /**
+     * @param Expr $expr
+     * @return Expr
+     */
     private function decorate(Expr $expr): Expr
     {
         return new StaticCall(new FullyQualified(Exception::class), 'withLocation', [
