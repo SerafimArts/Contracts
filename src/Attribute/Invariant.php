@@ -22,7 +22,7 @@ use Serafim\Contracts\Exception\InvariantException;
  * and exit of methods, and throw a {@see InvariantException} when they are
  * violated.
  */
-#[\Attribute(\Attribute::TARGET_CLASS | \Attribute::IS_REPEATABLE)]
+#[\Attribute(\Attribute::TARGET_CLASS | \Attribute::TARGET_PROPERTY | \Attribute::IS_REPEATABLE)]
 final class Invariant extends Contract
 {
     /**
@@ -32,11 +32,13 @@ final class Invariant extends Contract
      *
      * @psalm-taint-sink eval $expr
      * @param non-empty-string $expr
+     * @param string|null $reason
      */
     public function __construct(
-        #[Language('PHP')]
-        public readonly string $expr
+        #[Language('PHP')] string $expr,
+        ?string $reason = null,
     ) {
+        parent::__construct($expr, $reason);
     }
 
     /**

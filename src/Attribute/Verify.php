@@ -35,11 +35,13 @@ final class Verify extends Contract
      *
      * @psalm-taint-sink eval $expr
      * @param non-empty-string $expr
+     * @param string|null $reason
      */
     public function __construct(
-        #[Language('PHP')]
-        public readonly string $expr
+        #[Language('PHP')] string $expr,
+        ?string $reason = null,
     ) {
+        parent::__construct($expr, $reason);
     }
 
     /**
