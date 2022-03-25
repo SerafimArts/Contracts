@@ -52,10 +52,11 @@ final class Processor implements ProcessorInterface
         private readonly LoaderInterface $loader,
         string $storage = null
     ) {
-        $this->compiler = new Compiler();
-
         /** @psalm-suppress ArgumentTypeCoercion: Non-empty string provided */
         $this->cache = new Cache($storage ?? \sys_get_temp_dir());
+        $this->compiler = new Compiler();
+
+        \spl_autoload_register($this->loadClass(...), true, true);
     }
 
     /**
@@ -84,7 +85,6 @@ final class Processor implements ProcessorInterface
     public function enable(): void
     {
         $this->enabled = true;
-        \spl_autoload_register([$this, 'loadClass'], true, true);
     }
 
     /**
@@ -93,7 +93,6 @@ final class Processor implements ProcessorInterface
     public function disable(): void
     {
         $this->enabled = false;
-        \spl_autoload_unregister([$this, 'loadClass']);
     }
 
     /**
