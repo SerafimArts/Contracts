@@ -16,10 +16,7 @@ for PHP, which uses attributes to provide run-time checking.
 
 ## Requirements
 
-- PHP >= 7.1
-
-> Note that an PHP 8.0 Attribute syntax is used, however it works on 
-> any PHP version including 7.1.
+- PHP 8.1+
 
 ## Installation
 
@@ -204,7 +201,7 @@ in the implementation of the method itself.
 #### Keywords
 
 | Keyword    | May appear in | Description           |
-| ---------- | ------------- | --------------------- |
+|------------|---------------|-----------------------|
 | `$old`     | `#[Ensure]`   | Value on method entry |
 | `$result`  | `#[Ensure]`   | Value to be returned  |
 
