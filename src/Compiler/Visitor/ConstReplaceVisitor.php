@@ -46,7 +46,7 @@ final class ConstReplaceVisitor extends NodeVisitorAbstract
         }
 
         if ($node instanceof Node\Scalar\MagicConst\Line) {
-            return new Node\Scalar\DNumber($this->line + $node->getLine() - 1);
+            return new Node\Scalar\LNumber($this->line + $node->getLine() - 1);
         }
 
         return parent::leaveNode($node);
