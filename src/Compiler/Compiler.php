@@ -18,6 +18,7 @@ use PhpParser\Parser as ParserInterface;
 use PhpParser\ParserFactory;
 use PhpParser\PrettyPrinter\Standard;
 use PhpParser\PrettyPrinterAbstract;
+use Serafim\Contracts\Compiler\Visitor\ConstReplaceVisitor;
 use Serafim\Contracts\Compiler\Visitor\ContractsApplicatorVisitor;
 use Serafim\Contracts\Compiler\Visitor\ExceptionDecoratorVisitor;
 use Serafim\Contracts\Exception\Decorator;
@@ -88,6 +89,7 @@ final class Compiler implements CompilerInterface
 
         $traverser = new NodeTraverser();
         $traverser->addVisitor(new NameResolver(options: ['preserveOriginalNames' => true]));
+        $traverser->addVisitor(new ConstReplaceVisitor($pathname, 1));
         $traverser->addVisitor(new ExceptionDecoratorVisitor($pathname));
         $traverser->addVisitor(new ContractsApplicatorVisitor($pathname, $this->contracts, $this->injector));
 
