@@ -12,6 +12,7 @@ declare(strict_types=1);
 namespace Serafim\Contracts\Compiler\Visitor;
 
 use PhpParser\Node;
+use PhpParser\Node\Stmt\Class_;
 use PhpParser\NodeTraverser;
 use PhpParser\NodeVisitorAbstract;
 use Serafim\Contracts\Attribute\Invariant;
@@ -54,7 +55,7 @@ final class ContractsApplicatorVisitor extends NodeVisitorAbstract
      */
     public function enterNode(Node $node): ?int
     {
-        if ($node instanceof Node\Stmt\Class_) {
+        if ($node instanceof Class_) {
             $this->class = $node->name->toString();
         }
 
@@ -71,12 +72,16 @@ final class ContractsApplicatorVisitor extends NodeVisitorAbstract
     public function leaveNode(Node $node): void
     {
         // Clear all invariants
-        if ($node instanceof Node\Stmt\Class_) {
+        if ($node instanceof Class_) {
             $this->invariants = [];
             $this->class = null;
         }
 
         if ($node instanceof Node\Stmt\ClassMethod) {
+            if (($node->flags & Class_::MODIFIER_ABSTRACT) === Class_::MODIFIER_ABSTRACT) {
+                return;
+            }
+
             $this->injector->inject($this->file, $node, $this->invariants);
         }
     }
