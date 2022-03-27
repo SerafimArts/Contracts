@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace Serafim\Contracts\Compiler;
 
+use PhpParser\Error;
 use PhpParser\NodeTraverser;
 use PhpParser\NodeVisitor\NameResolver;
 use PhpParser\Parser as ParserInterface;
@@ -19,6 +20,7 @@ use PhpParser\PrettyPrinter\Standard;
 use PhpParser\PrettyPrinterAbstract;
 use Serafim\Contracts\Compiler\Visitor\ContractsApplicatorVisitor;
 use Serafim\Contracts\Compiler\Visitor\ExceptionDecoratorVisitor;
+use Serafim\Contracts\Exception\Decorator;
 
 /**
  * @internal This is an internal library class, please do not use it in your code.
@@ -89,10 +91,15 @@ final class Compiler implements CompilerInterface
         $traverser->addVisitor(new ExceptionDecoratorVisitor($pathname));
         $traverser->addVisitor(new ContractsApplicatorVisitor($pathname, $this->contracts, $this->injector));
 
+        try {
+            $ast = $this->parser->parse(\file_get_contents($pathname));
+        } catch (Error $e) {
+            $error = new \ParseError($e->getMessage(), (int)$e->getCode(), $e);
+            throw Decorator::decorate($error, $pathname, $e->getStartLine());
+        }
+
         return $this->printer->prettyPrintFile(
-            $traverser->traverse(
-                $this->parser->parse(\file_get_contents($pathname))
-            )
+            $traverser->traverse($ast)
         );
     }
 }
