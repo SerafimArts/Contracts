@@ -12,6 +12,7 @@ declare(strict_types=1);
 namespace Serafim\Contracts\Compiler;
 
 use PhpParser\Comment;
+use PhpParser\Node\Attribute;
 use PhpParser\Node\Expr\Assign;
 use PhpParser\Node\Expr\Clone_;
 use PhpParser\Node\Expr\ConstFetch;
@@ -30,6 +31,7 @@ use Serafim\Contracts\Compiler\Visitor\ContractsApplicatorVisitor\EnsureStatemen
 use Serafim\Contracts\Compiler\Visitor\ContractsApplicatorVisitor\InvariantStatement;
 use Serafim\Contracts\Compiler\Visitor\ContractsApplicatorVisitor\VerifyStatement;
 use Serafim\Contracts\Compiler\Visitor\ReturnDecoratorVisitor;
+use Serafim\Contracts\Exception\SpecificationException;
 
 /**
  * @internal This is an internal library class, please do not use it in your code.
@@ -37,6 +39,11 @@ use Serafim\Contracts\Compiler\Visitor\ReturnDecoratorVisitor;
  */
 final class MethodInjector
 {
+    /**
+     * @var string
+     */
+    private const ERROR_OLD_INSIDE_STATIC = 'Could not use "$old" variable inside static method %s()';
+
     /**
      * @param ContractsParser $parser
      */
@@ -54,6 +61,7 @@ final class MethodInjector
      */
     public function inject(string $file, ClassMethod $method, array $invariants): ClassMethod
     {
+        $isResultUsed = $isOldStateUsed = false;
         $preconditions = $postconditions = [];
 
         foreach ($this->getPreconditions($file, $method) as $precondition) {
@@ -63,27 +71,56 @@ final class MethodInjector
         $old = $this->generateVariable('old');
         $result = $this->generateVariable('result');
 
-        foreach ($this->getPostconditions($file, $method) as $postcondition) {
-            $postconditions[] = $this->modifyPostcondition($old, $result, $postcondition->getExpression());
+        /** @var Attribute $ensure */
+        foreach ($this->getPostconditions($file, $method) as $ensure => $postcondition) {
+            $finder = new NodeFinder();
+
+            /** @var Variable $variable */
+            foreach ($finder->findInstanceOf([$postcondition->getExpression()], Variable::class) as $variable) {
+                switch ($variable->name) {
+                    case 'result':
+                        $isResultUsed = true;
+                        $variable->name = $result->name;
+                        break;
+
+                    case 'old':
+                        // Check that method is not static
+                        if (($method->flags & Stmt\Class_::MODIFIER_STATIC) === Stmt\Class_::MODIFIER_STATIC) {
+                            $message = \sprintf(self::ERROR_OLD_INSIDE_STATIC, $method->name->toString());
+                            throw SpecificationException::create($message, $file, $ensure->getLine());
+                        }
+
+                        $isOldStateUsed = true;
+                        $variable->name = $old->name;
+                        break;
+                }
+            }
+
+            $postconditions[] = $postcondition->getExpression();
         }
 
         // Has Ensure Statements
         if (\count($postconditions)) {
-            $preconditions = [
-                // Add clone expression
-                new Expression(
-                    new Assign($old, new Clone_(new Variable('this'))),
-                    $this->comment('Clone object for future comparison '
-                        . 'with the "$old" variable value')
-                ),
-                // Initialize return variable
-                new Expression(
-                    new Assign($result, new ConstFetch(new Name('null'))),
-                    $this->comment('Initialize the return variable for '
-                        . 'comparison in case of an empty return statement')
-                ),
-                ...$preconditions,
-            ];
+            $preconditions = [];
+
+            // Add clone expression in case of "$old" variable has been used.
+            if ($isOldStateUsed) {
+                $cloneExpression = new Expression(
+                    new Assign($old, new Clone_(new Variable('this')))
+                );
+
+                \array_unshift($preconditions, $cloneExpression);
+            }
+
+            // Add result variable initialization in case of "$result"
+            // variable has been used.
+            if ($isResultUsed) {
+                $resultExpression = new Expression(
+                    new Assign($result, new ConstFetch(new Name('null')))
+                );
+
+                \array_unshift($preconditions, $resultExpression);
+            }
 
             // Decorate return
             $method->stmts = $this->wrapReturnStatement($result, $method->stmts);
@@ -159,34 +196,10 @@ final class MethodInjector
     private function getPostconditions(string $file, ClassMethod $method): iterable
     {
         foreach ($this->getAttributes($method, Ensure::class) as $attribute) {
-            yield from $this->parser->ensure($file, $attribute);
-        }
-    }
-
-    /**
-     * @param Variable $old
-     * @param Variable $result
-     * @param Expression $expr
-     * @return Expression
-     */
-    private function modifyPostcondition(Variable $old, Variable $result, Expression $expr): Expression
-    {
-        $finder = new NodeFinder();
-
-        /** @var Variable $variable */
-        foreach ($finder->findInstanceOf([$expr], Variable::class) as $variable) {
-            switch ($variable->name) {
-                case 'result':
-                    $variable->name = $result->name;
-                    break;
-
-                case 'old':
-                    $variable->name = $old->name;
-                    break;
+            foreach ($this->parser->ensure($file, $attribute) as $item) {
+                yield $attribute => $item;
             }
         }
-
-        return $expr;
     }
 
     /**
