@@ -1,8 +1,6 @@
-# Contracts
-
-Contracts for PHP, is a contract programming framework and test tool 
-for PHP, which uses attributes to provide run-time checking. 
-(In particular, this is not a static analysis tool.)
+<p align="center">
+    <img width="128" src="https://user-images.githubusercontent.com/2461257/160720788-267b6691-62eb-4b9a-b10d-973e7907156d.png">
+</p>
 
 <p align="center">
     <a href="https://github.com/SerafimArts/Contracts/actions"><img src="https://github.com/SerafimArts/Contracts/workflows/build/badge.svg"></a>
@@ -12,6 +10,10 @@ for PHP, which uses attributes to provide run-time checking.
     <a href="https://packagist.org/packages/serafim/dbc"><img src="https://poser.pugx.org/serafim/dbc/downloads" alt="Total Downloads"></a>
     <a href="https://raw.githubusercontent.com/SerafimArts/Contracts/master/LICENSE.md"><img src="https://poser.pugx.org/ffi-headers/vulkan-headers/license" alt="License MIT"></a>
 </p>
+
+Contracts for PHP, is a contract programming framework and test tool 
+for PHP, which uses attributes to provide run-time checking. 
+(In particular, this is not a static analysis tool.)
 
 ## Contents
 
