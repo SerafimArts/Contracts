@@ -130,7 +130,7 @@ final class MethodInjector
             $postconditions[] = $invariant->getExpression();
         }
 
-        if (\is_array($method->stmts)) {
+        if ($method->stmts !== null) {
             $method->stmts = $this->getDecorator($method->stmts, $preconditions, $postconditions);
         }
 
