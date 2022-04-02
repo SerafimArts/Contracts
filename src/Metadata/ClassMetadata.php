@@ -9,14 +9,16 @@
 
 declare(strict_types=1);
 
-namespace Serafim\Contracts\Metadata\Info;
+namespace Serafim\Contracts\Metadata;
 
 use Serafim\Contracts\Attribute\Invariant;
+use Serafim\Contracts\Metadata\ClassLike\ClassModifier;
 
 final class ClassMetadata extends ClassLikeMetadata
 {
     /**
      * @param class-string $name
+     * @param Location $location
      * @param array<non-empty-string, MethodMetadata> $methods
      * @param list<AttributeMetadata<Invariant>> $invariants
      * @param list<ClassModifier> $modifiers
@@ -26,6 +28,7 @@ final class ClassMetadata extends ClassLikeMetadata
      */
     public function __construct(
         string $name,
+        Location $location,
         array $methods = [],
         array $invariants = [],
         public array $modifiers = [],
@@ -33,6 +36,6 @@ final class ClassMetadata extends ClassLikeMetadata
         public array $interfaces = [],
         public array $traits = [],
     ) {
-        parent::__construct($name, $methods, $invariants);
+        parent::__construct($name, $location, $methods, $invariants);
     }
 }

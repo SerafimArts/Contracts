@@ -11,7 +11,6 @@ declare(strict_types=1);
 
 namespace Serafim\Contracts\Compiler;
 
-use PhpParser\Comment;
 use PhpParser\Node\Attribute;
 use PhpParser\Node\Expr\Assign;
 use PhpParser\Node\Expr\Clone_;
@@ -45,11 +44,17 @@ final class MethodInjector
     private const ERROR_OLD_INSIDE_STATIC = 'Could not use "$old" variable inside static method %s()';
 
     /**
+     * @var VariableGenerator
+     */
+    private VariableGenerator $generator;
+
+    /**
      * @param ContractsParser $parser
      */
     public function __construct(
         private readonly ContractsParser $parser
     ) {
+        $this->generator = new VariableGenerator();
     }
 
     /**
@@ -68,8 +73,8 @@ final class MethodInjector
             $preconditions[] = $precondition->getExpression();
         }
 
-        $old = $this->generateVariable('old');
-        $result = $this->generateVariable('result');
+        $old = new Variable($this->generator->generate('old', $method->name->toString()));
+        $result = new Variable($this->generator->generate('result', $method->name->toString()));
 
         /** @var Attribute $ensure */
         foreach ($this->getPostconditions($file, $method) as $ensure => $postcondition) {
@@ -130,20 +135,11 @@ final class MethodInjector
             $postconditions[] = $invariant->getExpression();
         }
 
-        $method->stmts = $this->getDecorator($method->stmts, $preconditions, $postconditions);
+        if ($method->stmts !== null) {
+            $method->stmts = $this->getDecorator($method->stmts, $preconditions, $postconditions);
+        }
 
         return $method;
-    }
-
-    /**
-     * @param string $text
-     * @return array{comments: array<Comment>}
-     */
-    private function comment(string $text): array
-    {
-        return ['comments' => [
-            new Comment('/* ' . \str_replace('*/', '*\\/', $text) . ' */')
-        ]];
     }
 
     /**
@@ -175,16 +171,6 @@ final class MethodInjector
                 }
             }
         }
-    }
-
-    /**
-     * @param non-empty-string $prefix
-     * @return Variable
-     * @throws \Exception
-     */
-    private function generateVariable(string $prefix): Variable
-    {
-        return new Variable('__⁠' . $prefix . '⁠' . \hash('xxh32', \random_bytes(32)));
     }
 
     /**

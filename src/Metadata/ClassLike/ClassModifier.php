@@ -9,11 +9,10 @@
 
 declare(strict_types=1);
 
-namespace Serafim\Contracts\Metadata\Info;
+namespace Serafim\Contracts\Metadata\ClassLike;
 
-enum MethodVisibility
+enum ClassModifier
 {
-    case PUBLIC;
-    case PROTECTED;
-    case PRIVATE;
+    case FINAL;
+    case ABSTRACT;
 }

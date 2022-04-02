@@ -9,27 +9,26 @@
 
 declare(strict_types=1);
 
-namespace Serafim\Contracts\Metadata\Info;
+namespace Serafim\Contracts\Metadata;
 
 use Serafim\Contracts\Attribute\Invariant;
 
-/**
- * @template TObject of object
- */
-final class TraitMetadata extends ClassLikeMetadata
+final class InterfaceMetadata extends ClassLikeMetadata
 {
     /**
-     * @param class-string<TObject> $name
+     * @param class-string $name
+     * @param Location $location
      * @param array<non-empty-string, MethodMetadata> $methods
      * @param list<AttributeMetadata<Invariant>> $invariants
-     * @param list<TraitMetadata> $traits
+     * @param list<InterfaceMetadata> $interfaces
      */
     public function __construct(
         string $name,
+        Location $location,
         array $methods = [],
         array $invariants = [],
-        public array $traits = [],
+        public array $interfaces = [],
     ) {
-        parent::__construct($name, $methods, $invariants);
+        parent::__construct($name, $location, $methods, $invariants);
     }
 }

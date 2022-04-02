@@ -9,27 +9,31 @@
 
 declare(strict_types=1);
 
-namespace Serafim\Contracts\Metadata\Info;
+namespace Serafim\Contracts\Metadata;
 
 use Serafim\Contracts\Attribute\Ensure;
 use Serafim\Contracts\Attribute\Verify;
+use Serafim\Contracts\Metadata\Method\MethodModifier;
+use Serafim\Contracts\Metadata\Method\MethodVisibility;
 
 class MethodMetadata extends Metadata
 {
     /**
      * @param non-empty-string $name
-     * @param list<Verify> $pre
-     * @param list<Ensure> $post
+     * @param Location $location
+     * @param list<AttributeMetadata<Verify>> $pre
+     * @param list<AttributeMetadata<Ensure>> $post
      * @param list<MethodModifier> $modifiers
      * @param MethodVisibility $visibility
      */
     public function __construct(
         string $name,
+        Location $location,
         public array $pre = [],
         public array $post = [],
         public array $modifiers = [],
         public MethodVisibility $visibility = MethodVisibility::PUBLIC,
     ) {
-        parent::__construct($name);
+        parent::__construct($name, $location);
     }
 }

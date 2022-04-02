@@ -9,24 +9,24 @@
 
 declare(strict_types=1);
 
-namespace Serafim\Contracts\Metadata\Info;
+namespace Serafim\Contracts\Metadata;
 
 use Serafim\Contracts\Attribute\Invariant;
 
-final class EnumMetadata extends ClassLikeMetadata
+abstract class ClassLikeMetadata extends Metadata
 {
     /**
      * @param class-string $name
+     * @param Location $location
      * @param array<non-empty-string, MethodMetadata> $methods
      * @param list<AttributeMetadata<Invariant>> $invariants
-     * @param list<InterfaceMetadata> $interfaces
      */
     public function __construct(
         string $name,
-        array $methods = [],
-        array $invariants = [],
-        public array $interfaces = [],
+        Location $location,
+        public array $methods = [],
+        public array $invariants = [],
     ) {
-        parent::__construct($name, $methods, $invariants);
+        parent::__construct($name, $location);
     }
 }

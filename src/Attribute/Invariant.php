@@ -35,7 +35,7 @@ final class Invariant extends Contract
      * @param string|null $reason
      */
     public function __construct(
-        #[Language('PHP')] string $expr,
+        #[Language('PHP')] string|callable $expr,
         ?string $reason = null,
     ) {
         parent::__construct($expr, $reason);

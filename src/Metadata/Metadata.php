@@ -9,23 +9,17 @@
 
 declare(strict_types=1);
 
-namespace Serafim\Contracts\Metadata\Info;
+namespace Serafim\Contracts\Metadata;
 
-use Serafim\Contracts\Attribute\Contract;
-
-/**
- * @template T of Contract
- * @see Contract
- */
-final class AttributeMetadata extends Metadata
+abstract class Metadata
 {
     /**
-     * @param class-string<T> $name
-     * @param array $arguments
+     * @param non-empty-string $name
+     * @param Location $location
      */
     public function __construct(
         public string $name,
-        public array $arguments = [],
+        public Location $location,
     ) {
     }
 }

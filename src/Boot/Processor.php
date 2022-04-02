@@ -9,18 +9,20 @@
 
 declare(strict_types=1);
 
-namespace Serafim\Contracts;
+namespace Serafim\Contracts\Boot;
 
 use Serafim\Contracts\Boot\Cache\Cache;
 use Serafim\Contracts\Boot\Cache\CacheInterface;
-use Serafim\Contracts\Boot\Loader\ComposerLoader;
 use Serafim\Contracts\Boot\Loader\LoaderInterface;
-use Serafim\Contracts\Boot\ProcessorInterface;
-use Serafim\Contracts\Compiler\Compiler;
+use Serafim\Contracts\Compiler\Pipeline;
 use Serafim\Contracts\Exception\Decorator;
 
 use function Composer\Autoload\includeFile;
 
+/**
+ * @internal This is an internal library interface, please do not use it in your code.
+ * @psalm-internal Serafim\Contracts
+ */
 final class Processor implements ProcessorInterface
 {
     /**
@@ -34,9 +36,9 @@ final class Processor implements ProcessorInterface
     public readonly CacheInterface $cache;
 
     /**
-     * @var Compiler
+     * @var Pipeline
      */
-    private readonly Compiler $compiler;
+    private readonly Pipeline $compiler;
 
     /**
      * @var bool
@@ -54,19 +56,9 @@ final class Processor implements ProcessorInterface
     ) {
         /** @psalm-suppress ArgumentTypeCoercion: Non-empty string provided */
         $this->cache = new Cache($storage ?? \sys_get_temp_dir());
-        $this->compiler = new Compiler();
+        $this->compiler = new Pipeline();
 
         \spl_autoload_register($this->loadClass(...), true, true);
-    }
-
-    /**
-     * @psalm-taint-sink file $storage
-     * @param non-empty-string|null $storage
-     * @return static
-     */
-    public static function fromComposer(string $storage = null): self
-    {
-        return new self(ComposerLoader::create(), $storage);
     }
 
     /**
@@ -140,7 +132,7 @@ final class Processor implements ProcessorInterface
         }
 
         $pathname = $this->cache->get($class, $file, function () use ($file) {
-            return $this->compiler->compile($file);
+            return $this->compiler->process($file);
         });
 
         if (\function_exists('includeFile')) {

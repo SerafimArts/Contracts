@@ -27,15 +27,24 @@ class AssertionException extends \AssertionError implements
      */
     final public function __construct(string $message, string $file = null, int $line = null)
     {
-        $segments = \explode('\\', static::class);
-
-        parent::__construct(\vsprintf('%s assertion (%s) failed', [
-            \substr(\end($segments), 0, -9),
-            $message,
-        ]));
+        parent::__construct($this->createMessage($message));
 
         if ($file !== null && $line !== null) {
             [$this->file, $this->line] = [$file, $line];
         }
+    }
+
+    /**
+     * @param string $message
+     * @return string
+     */
+    protected function createMessage(string $message): string
+    {
+        $segments = \explode('\\', static::class);
+
+        return \vsprintf('%s violation: %s', [
+            \substr(\end($segments), 0, -9),
+            $message,
+        ]);
     }
 }

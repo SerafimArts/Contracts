@@ -41,21 +41,34 @@ class SpecificationException extends \InvalidArgumentException implements
 
     /**
      * @psalm-taint-sink file $file
-     * @param string $message
+     * @param string|\Throwable $error
      * @param non-empty-string $file
      * @param positive-int $line
      * @return static
      */
-    public static function create(string $message, string $file, int $line): static
+    public static function create(string|\Throwable $error, string $file, int $line): static
     {
         /** @psalm-suppress RedundantCondition */
         assert($line > 0, new \InvalidArgumentException('Line must be greater than 0'));
 
-        $instance = new static($message);
+        if ($error instanceof \Throwable) {
+            $error = $error->getMessage();
+        }
+
+        $instance = new static($error);
         $instance->file = $file;
         $instance->line = $line;
 
         return $instance;
+    }
+
+    /**
+     * @param \Throwable $e
+     * @return static
+     */
+    public static function from(\Throwable $e): static
+    {
+        return new static($e->getMessage(), (int)$e->getLine());
     }
 
     /**

@@ -15,40 +15,43 @@ use PhpParser\Node;
 use PhpParser\NodeVisitorAbstract;
 
 /**
+ * Replaces all occurrences of {@see __DIR__}, {@see __FILE__}
+ * and {@see __LINE__} directives with the original location.
+ *
  * @internal This is an internal library class, please do not use it in your code.
  * @psalm-internal Serafim\Contracts\Compiler
  */
 final class ConstReplaceVisitor extends NodeVisitorAbstract
 {
     /**
-     * @psalm-taint-sink file $file
-     * @param non-empty-string $file
+     * @psalm-taint-sink file $pathname
+     * @param non-empty-string $pathname
      * @param positive-int $line
      */
     public function __construct(
-        private readonly string $file,
-        private readonly int $line,
+        private readonly string $pathname,
+        private readonly int $line = 1,
     ) {
     }
 
     /**
      * @param Node $node
-     * @return mixed|void
+     * @return Node|null
      */
-    public function leaveNode(Node $node)
+    public function leaveNode(Node $node): ?Node
     {
         if ($node instanceof Node\Scalar\MagicConst\Dir) {
-            return new Node\Scalar\String_(\dirname($this->file));
+            return new Node\Scalar\String_(\dirname($this->pathname));
         }
 
         if ($node instanceof Node\Scalar\MagicConst\File) {
-            return new Node\Scalar\String_($this->file);
+            return new Node\Scalar\String_($this->pathname);
         }
 
         if ($node instanceof Node\Scalar\MagicConst\Line) {
             return new Node\Scalar\LNumber($this->line + $node->getLine() - 1);
         }
 
-        return parent::leaveNode($node);
+        return null;
     }
 }

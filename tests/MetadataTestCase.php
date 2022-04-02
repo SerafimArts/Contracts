@@ -15,14 +15,16 @@ use JetBrains\PhpStorm\Language;
 use Serafim\Contracts\Attribute\Ensure;
 use Serafim\Contracts\Attribute\Invariant;
 use Serafim\Contracts\Attribute\Verify;
-use Serafim\Contracts\Metadata\Info\AttributeMetadata;
-use Serafim\Contracts\Metadata\Info\ClassMetadata;
-use Serafim\Contracts\Metadata\Info\ClassModifier;
-use Serafim\Contracts\Metadata\Info\EnumMetadata;
-use Serafim\Contracts\Metadata\Info\InterfaceMetadata;
-use Serafim\Contracts\Metadata\Info\TraitMetadata;
+use Serafim\Contracts\Metadata\Attribute\AttributeArgument;
+use Serafim\Contracts\Metadata\AttributeMetadata;
+use Serafim\Contracts\Metadata\ClassLike\ClassModifier;
+use Serafim\Contracts\Metadata\ClassMetadata;
+use Serafim\Contracts\Metadata\EnumMetadata;
+use Serafim\Contracts\Metadata\InterfaceMetadata;
+use Serafim\Contracts\Metadata\Location;
 use Serafim\Contracts\Metadata\ReaderInterface;
 use Serafim\Contracts\Metadata\RoaveReader;
+use Serafim\Contracts\Metadata\TraitMetadata;
 use Serafim\Contracts\Tests\Stub\AbstractClassStub;
 use Serafim\Contracts\Tests\Stub\ChildClassStub;
 use Serafim\Contracts\Tests\Stub\EnumStub;
@@ -44,24 +46,29 @@ class MetadataTestCase extends TestCase
         ];
     }
 
-    private function attribute(string $name, array $args): AttributeMetadata
+    private function attribute(string $name, array $args, string $file = null, int $line = 1): AttributeMetadata
     {
-        return new AttributeMetadata($name, $args);
+        $location = $file === null ? Location::empty() : new Location($file, $line);
+
+        return new AttributeMetadata($name, $location, $args);
     }
 
-    private function invariant(#[Language('PHP')] mixed ...$arguments): AttributeMetadata
+    private function invariant(string $value, string $class, int $line): AttributeMetadata
     {
-        return $this->attribute(Invariant::class, $arguments);
+        return new AttributeMetadata(Invariant::class, $this->locationOf($class, $line), [
+            new AttributeArgument($value, $this->locationOf($class, $line))
+        ]);
     }
 
-    private function verify(#[Language('PHP')] mixed ...$arguments): AttributeMetadata
+
+    private function fileOf(string $class): string
     {
-        return $this->attribute(Verify::class, $arguments);
+        return (new \ReflectionClass($class))->getFileName();
     }
 
-    private function ensure(#[Language('PHP')] mixed ...$arguments): AttributeMetadata
+    private function locationOf(string $class, int $line = 1): Location
     {
-        return $this->attribute(Ensure::class, $arguments);
+        return new Location($this->fileOf($class), $line);
     }
 
     /**
@@ -74,7 +81,9 @@ class MetadataTestCase extends TestCase
         $this->assertInstanceOf(ClassMetadata::class, $info);
         $this->assertSame(AbstractClassStub::class, $info->name);
         $this->assertCount(3, $info->methods);
-        $this->assertEquals([$this->invariant('is_string("AbstractClassStub")')], $info->invariants);
+        $this->assertEquals([
+            $this->invariant('is_string("AbstractClassStub")', AbstractClassStub::class, 18),
+        ], $info->invariants);
         $this->assertSame([ClassModifier::ABSTRACT], $info->modifiers);
         $this->assertNull($info->parent);
         $this->assertCount(0, $info->interfaces);
@@ -91,7 +100,9 @@ class MetadataTestCase extends TestCase
         $this->assertInstanceOf(ClassMetadata::class, $info);
         $this->assertSame(ChildClassStub::class, $info->name);
         $this->assertCount(3, $info->methods);
-        $this->assertEquals([$this->invariant('is_string("ChildClassStub")')], $info->invariants);
+        $this->assertEquals([
+            $this->invariant('is_string("ChildClassStub")', ChildClassStub::class, 18),
+        ], $info->invariants);
         $this->assertSame([], $info->modifiers);
         $this->assertInstanceOf(ClassMetadata::class, $info->parent);
         $this->assertCount(0, $info->interfaces);
@@ -108,7 +119,9 @@ class MetadataTestCase extends TestCase
         $this->assertInstanceOf(EnumMetadata::class, $info);
         $this->assertSame(EnumStub::class, $info->name);
         $this->assertCount(3, $info->methods);
-        $this->assertEquals([$this->invariant('is_string("EnumStub")')], $info->invariants);
+        $this->assertEquals([
+            $this->invariant('is_string("EnumStub")', EnumStub::class, 18),
+        ], $info->invariants);
         $this->assertCount(2, $info->interfaces);
     }
 
@@ -122,7 +135,9 @@ class MetadataTestCase extends TestCase
         $this->assertInstanceOf(ClassMetadata::class, $info);
         $this->assertSame(FinalClassStub::class, $info->name);
         $this->assertCount(3, $info->methods);
-        $this->assertEquals([$this->invariant('is_string("FinalClassStub")')], $info->invariants);
+        $this->assertEquals([
+            $this->invariant('is_string("FinalClassStub")', FinalClassStub::class, 18),
+        ], $info->invariants);
         $this->assertSame([ClassModifier::FINAL], $info->modifiers);
         $this->assertInstanceOf(ClassMetadata::class, $info->parent);
         $this->assertCount(2, $info->interfaces);
@@ -139,7 +154,9 @@ class MetadataTestCase extends TestCase
         $this->assertInstanceOf(InterfaceMetadata::class, $info);
         $this->assertSame(FirstInterfaceStub::class, $info->name);
         $this->assertCount(1, $info->methods);
-        $this->assertEquals([$this->invariant('is_string("FirstInterfaceStub")')], $info->invariants);
+        $this->assertEquals([
+            $this->invariant('is_string("FirstInterfaceStub")', FirstInterfaceStub::class, 18),
+        ], $info->invariants);
         $this->assertCount(1, $info->interfaces);
 
         $parent = \reset($info->interfaces);
@@ -147,7 +164,9 @@ class MetadataTestCase extends TestCase
         $this->assertInstanceOf(InterfaceMetadata::class, $parent);
         $this->assertSame(SecondInterfaceStub::class, $parent->name);
         $this->assertCount(1, $parent->methods);
-        $this->assertEquals([$this->invariant('is_string("SecondInterfaceStub")')], $parent->invariants);
+        $this->assertEquals([
+            $this->invariant('is_string("SecondInterfaceStub")', SecondInterfaceStub::class, 18),
+        ], $parent->invariants);
         $this->assertCount(0, $parent->interfaces);
     }
 
@@ -161,7 +180,9 @@ class MetadataTestCase extends TestCase
         $this->assertInstanceOf(TraitMetadata::class, $info);
         $this->assertSame(FirstTraitStub::class, $info->name);
         $this->assertCount(3, $info->methods);
-        $this->assertEquals([$this->invariant('is_string("FirstTraitStub")')], $info->invariants);
+        $this->assertEquals([
+            $this->invariant('is_string("FirstTraitStub")', FirstTraitStub::class, 18),
+        ], $info->invariants);
         $this->assertCount(1, $info->traits);
 
         $parent = \reset($info->traits);
@@ -169,7 +190,9 @@ class MetadataTestCase extends TestCase
         $this->assertInstanceOf(TraitMetadata::class, $parent);
         $this->assertSame(SecondTraitStub::class, $parent->name);
         $this->assertCount(3, $parent->methods);
-        $this->assertEquals([$this->invariant('is_string("SecondTraitStub")')], $parent->invariants);
+        $this->assertEquals([
+            $this->invariant('is_string("SecondTraitStub")', SecondTraitStub::class, 18),
+        ], $parent->invariants);
         $this->assertCount(0, $parent->traits);
     }
 

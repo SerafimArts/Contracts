@@ -9,7 +9,7 @@
 
 declare(strict_types=1);
 
-namespace Serafim\Contracts\Metadata\Info;
+namespace Serafim\Contracts\Metadata\Method;
 
 enum MethodModifier
 {

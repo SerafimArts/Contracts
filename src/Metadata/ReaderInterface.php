@@ -11,8 +11,6 @@ declare(strict_types=1);
 
 namespace Serafim\Contracts\Metadata;
 
-use Serafim\Contracts\Metadata\Info\ClassLikeMetadata;
-
 interface ReaderInterface
 {
     /**
